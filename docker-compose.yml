@@ -1,0 +1,48 @@
+version: "3"
+
+services:
+  bus1:
+    image: "redis:latest"
+  bus2:
+    image: "redis:latest"
+  dialogs-cache:
+    image: "redis:latest"
+  mariadb:
+    image: "mariadb:latest"
+    hostname: "mariadb"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3306:3306"
+  node1:
+    image: node
+    build: .
+    command: "npm start"
+    environment: 
+      number: 1
+    depends_on: 
+      - bus1
+      - bus2
+      - dialogs-cache
+      - mariadb
+  node2:
+    image: node
+    build: .
+    command: "npm start"
+    environment: 
+      number: 2
+    depends_on: 
+      - bus1
+      - bus2
+      - dialogs-cache
+      - mariadb
+  loadbalancer:
+    image: "nginx:latest"
+    build: 
+      context: ./loadbalancer
+      dockerfile: Dockerfile
+    links:
+      - node1
+      - node2
+    ports:
+      - 3000:80
